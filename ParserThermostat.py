@@ -20,12 +20,13 @@ class Report(object):
     """"""
 
     # ----------------------------------------------------------------------
-    def __init__(self, header1, header2, table1_data):
+    def __init__(self, header1, header2, header3, table1_data):
         """Constructor"""
         self.width, self.height = letter
         self.styles = getSampleStyleSheet()
         self.header1 = header1
         self.header2 = header2
+        self.header3 = header3
         self.table1_data = table1_data
 
     # ----------------------------------------------------------------------
@@ -45,8 +46,15 @@ class Report(object):
         self.doc = SimpleDocTemplate("test.pdf")
         self.story = [Spacer(1, 0 * inch)]
         #self.createLineItems()
+        self.story.append(Paragraph("PART-I", self.styles["Heading1"]))
+        self.story.append(Paragraph("Section-1. iOS Device Information", self.styles["Heading2"]))
         self.story.append(Paragraph(header1, self.styles["Normal"]))
+        self.story.append(Paragraph("Section-2. IoT Mobile Apps and User Information", self.styles["Heading2"]))
+        self.story.append(Paragraph("Nest App:", self.styles["Heading3"]))
         self.story.append(Paragraph(header2, self.styles["Normal"]))
+        self.story.append(Paragraph("Google Home App:", self.styles["Heading3"]))
+        self.story.append(Paragraph(header3, self.styles["Normal"]))
+        self.story.append(Paragraph("PART-II. Fence Report", self.styles["Heading1"]))
         self.createTable1()
         #self.story.append(report1table)
         self.doc.build(self.story, onFirstPage=self.createDocument)
@@ -62,22 +70,24 @@ class Report(object):
         styleBH.alignment = TA_CENTER
 
         # Headers
-        index_header = Paragraph('''<b>S.No.</b>''', styleBH)
-        datetime_header = Paragraph('''<b>LOGGING DATE/TIME </b>''', styleBH)
-        event_header = Paragraph('''<b>EVENT</b>''', styleBH)
-        nettype_header = Paragraph('''<b>NETWORK TYPE</b>''', styleBH)
-        inference_header = Paragraph('''<b>INFERENCE</b>''', styleBH)
+        #index_header = Paragraph('''<b>S.No.</b>''', styleBH)
+        datetime_header = Paragraph('''<b>Logging Date/Time</b>''', styleBH)
+        event_header = Paragraph('''<b>Event</b>''', styleBH)
+        nettype_header = Paragraph('''<b>iOS Network</b>''', styleBH)
+        internetconn_header = Paragraph('''<b>Internet Status</b>''', styleBH)
+        inference_header = Paragraph('''<b>Inference</b>''', styleBH)
 
         report1data = []
 
-        report1data = [[index_header, datetime_header, event_header, nettype_header, inference_header]]
+        #report1data = [[index_header, datetime_header, event_header, nettype_header, inference_header]]
+        report1data = [[datetime_header, event_header, nettype_header, internetconn_header, inference_header]]
 
         for element in data:
-            report1data.append([Paragraph(element[0], styleN),
-                                Paragraph(element[1], styleN),
+            report1data.append([Paragraph(element[1], styleN),
                                 Paragraph(element[2], styleN),
                                 Paragraph(element[3], styleN),
-                                Paragraph(element[4], styleN)])
+                                Paragraph(element[4], styleN),
+                                Paragraph(element[5], styleN)])
 
         report1table = Table(report1data, colWidths=[2.05 * cm, 2.7 * cm, 5 * cm,
                                                      3 * cm, 3 * cm])
@@ -146,38 +156,53 @@ def try_parse_int(s, base=10, val=None):
 #path = '/sandbox/17f7a8e8b387625472b32d4361250568b164c504/'
 
 path = sys.argv[1] #'/home/manuel/Documents/forensics/iotfolder/8c75768ed100ac467a83e7a8684a392e3b3b671a'
+#path = "ThermostatBackuponApr-18"  #sys.argv[1]
+
 print(path)
 manifest_path = os.path.join(path, 'Manifest.db')
 info_path = os.path.join(path, 'Info.plist')
 status_path = os.path.join(path, 'Status.plist')
 #print(manifest_path)
 
-with sqlite3.connect(manifest_path, uri=True) as conn:
-    c = conn.cursor()
+sqlite_nest_fullpath = os.path.join(path, 'Nest.sqlite')
+plist_nest_fullpath = os.path.join(path, 'com.nestlabs.jasper.release')
+goose_fullpath = os.path.join(path, 'GooseEventLogging')
 
-    sqlite_nest_relative_path = 'Documents/Nest.sqlite'
-    sqlite_nest_domain = 'AppDomain-com.nestlabs.jasper.release'
-    sqlite_nest_filename = ''
-    c.execute("SELECT fileID FROM Files WHERE relativePath='{0}' AND domain='{1}'".format(sqlite_nest_relative_path, sqlite_nest_domain))
-    sqlite_nest_filename = c.fetchone()[0]
-    sqlite_nest_fullpath = os.path.join(path, sqlite_nest_filename[:2], sqlite_nest_filename)
-    #print(sqlite_nest_fullpath)
+if(len(sys.argv) > 2):
+    if sys.argv[2] == "-b":
+        with sqlite3.connect(manifest_path, uri=True) as conn:
+            c = conn.cursor()
+            sqlite_nest_relative_path = 'Documents/Nest.sqlite'
+            sqlite_nest_domain = 'AppDomain-com.nestlabs.jasper.release'
+            sqlite_nest_filename = ''
+            c.execute("SELECT fileID FROM Files WHERE relativePath='{0}' AND domain='{1}'".format(sqlite_nest_relative_path, sqlite_nest_domain))
+            sqlite_nest_filename = c.fetchone()[0]
+            sqlite_nest_fullpath = os.path.join(path, sqlite_nest_filename[:2], sqlite_nest_filename)
+            #print(sqlite_nest_fullpath)
 
-    plist_nest_relative_path = 'Library/Preferences/com.nestlabs.jasper.release.plist'
-    plist_nest_domain = 'AppDomain-com.nestlabs.jasper.release'
-    plist_nest_filename = ''
-    c.execute("SELECT fileID FROM Files WHERE relativePath='{0}' AND domain='{1}'".format(plist_nest_relative_path, plist_nest_domain))
-    plist_nest_filename = c.fetchone()[0]
-    plist_nest_fullpath = os.path.join(path, plist_nest_filename[:2], plist_nest_filename)
-    #print(plist_nest_fullpath)
+            plist_nest_relative_path = 'Library/Preferences/com.nestlabs.jasper.release.plist'
+            plist_nest_domain = 'AppDomain-com.nestlabs.jasper.release'
+            plist_nest_filename = ''
+            c.execute("SELECT fileID FROM Files WHERE relativePath='{0}' AND domain='{1}'".format(plist_nest_relative_path, plist_nest_domain))
+            plist_nest_filename = c.fetchone()[0]
+            plist_nest_fullpath = os.path.join(path, plist_nest_filename[:2], plist_nest_filename)
+            #print(plist_nest_fullpath)
 
-    goose_relative_path = 'Documents/GooseEventLogging'
-    goose_domain = 'AppDomain-com.nestlabs.jasper.release'
-    goose_filename = ''
-    c.execute("SELECT fileID FROM Files WHERE relativePath='{0}' AND domain='{1}'".format(goose_relative_path,
-                                                                                          goose_domain))
-    goose_filename = c.fetchone()[0]
-    goose_fullpath = os.path.join(path, goose_filename[:2], goose_filename)
+            goose_relative_path = 'Documents/GooseEventLogging'
+            goose_domain = 'AppDomain-com.nestlabs.jasper.release'
+            goose_filename = ''
+            c.execute("SELECT fileID FROM Files WHERE relativePath='{0}' AND domain='{1}'".format(goose_relative_path,
+                                                                                                  goose_domain))
+            goose_filename = c.fetchone()[0]
+            goose_fullpath = os.path.join(path, goose_filename[:2], goose_filename)
+
+            google_relative_path = 'Library/Preferences/com.google.Chromecast.plist'
+            google_domain = 'AppDomain-com.google.Chromecast'
+            google_filename = ''
+            c.execute("SELECT fileID FROM Files WHERE relativePath='{0}' AND domain='{1}'".format(google_relative_path,
+                                                                                                  google_domain))
+            google_filename = c.fetchone()[0]
+            google_fullpath = os.path.join(path, google_filename[:2], google_filename)
 
 with open(info_path, 'rb') as f:
     info_plist = plistlib.load(f)
@@ -198,22 +223,31 @@ with open(goose_fullpath, 'rb') as f:
 num_objects = len(goose_plist['$objects'])
 print("Number of objects:" , num_objects)
 
+with open(google_fullpath, 'rb') as f:
+    google_plist = biplist.readPlist(f)
+    google_userID = google_plist["kGoogleAuthDefaultKeySSOIdentityUserID"]
+    google_user_address = google_plist["AddressEntryDefault"]
+    google_device_activation = google_plist["GRWUniversalMetricsFirstLaunchDateKey"]
+    google_device_identifier = google_plist["com.google.sso.GeneratedDeviceIdentifier"]
+    google_last_sync = google_plist["GRWMessagingCacheUserDefaultsKey"]["GRWCacheLastSyncDate"]
+    google_last_logging = google_plist["com.google.cast.analytics_logging_last_api_usage_report_time"]
+
 #jsonObjs = list()
 keys = set()
-goose_events = []
+all_events = []
 for i in range(2, num_objects-1):
     matchObj = re.match(r'(\d\d-\d\d \d\d:\d\d:\d\d\.\d\d\d\d):(.*)', goose_plist['$objects'][i])
     jsonObj = json.loads(matchObj.group(2))
 
     for key in jsonObj.keys():
         keys.add(key)
-    goose_events.append([matchObj.group(1),jsonObj])
+    all_events.append([matchObj.group(1), jsonObj])
 with open("goose.csv", "w") as f:
     f.write("timestamp|")
     for key in keys:
         f.write(key + "|")
     f.write("\n")
-    for ev in goose_events:
+    for ev in all_events:
         f.write(ev[0] + "|")
         for key in keys:
             if key in ev[1].keys():
@@ -224,9 +258,12 @@ with open("goose.csv", "w") as f:
         f.write("\n")
 
 relevantEvents = []
-for ev in goose_events:
+eventid  = 0
+eventIndexList = []
+for ev in all_events:
     if ev[1]["event"] == "FenceEvent":
         event = {}
+        event["internet_status"] = "-"
         event["timestamp"] = ev[0]
         event["event"] = ev[1]["event"]
         event["type"] = ev[1]["type"]
@@ -236,38 +273,77 @@ for ev in goose_events:
             event["network_type"] = "-"
         relevantEvents.append(event)
 
+        eventIndexList.append(eventid)
+        eventid += 1
+
+    elif ev[1]["event"] == "FenceReport":
+        for i in eventIndexList:
+            if ev[1]["network_type"] == "No Connection":
+                relevantEvents[i]["internet_status"] = "Offline"
+            else:
+                relevantEvents[i]["internet_status"] = "Online"
+        eventIndexList = []
+        #flush
+
+
 report1_rawdata = []
 
-with open("report1.csv", "w") as f:
-    f.write("S.No.|")
-    f.write("LOGGING DATE/TIME|")
-    f.write("EVENT|")
-    f.write("NETWORK TYPE|")
-    f.write("INFERENCE\n")
-    rowNo = 1
-    for event in relevantEvents:
-        f.write(str(rowNo) + "|")
-        f.write(event["timestamp"] + "|")
-        status = "Unknown"
-        if(event["type"] == "ENTER"):
+isAtHome = False
+rowNo = 1
+for event in relevantEvents:
+    status = "Unknown"
+    if(event["type"] == "ENTER"):
+        if(not isAtHome):
+            status = "User arrived home"
+            isAtHome = True
+        else:
             status = "User is at home"
-        elif(event["type"] == "EXIT"):
+    elif(event["type"] == "EXIT"):
+        if(isAtHome):
             status = "User left home"
-        f.write(event["type"] + "|")
-        f.write(event["network_type"] + "|")
-        f.write(status + "\n")
-        #f.write(event["event"] + "\n")
-        report1_rawdata.append([str(rowNo),
-                            event["timestamp"],
-                            event["type"],
-                            event["network_type"],
-                            str(status)])
-        # report1data.append([Paragraph(str(rowNo), styleN),
-        #                     Paragraph(event["timestamp"], styleN),
-        #                     Paragraph(event["type"], styleN),
-        #                     Paragraph(event["network_type"], styleN),
-        #                     Paragraph(str(status), styleN)])
-        rowNo += 1
+            isAtHome = False
+        else:
+            status = "User is outside"
+    report1_rawdata.append([str(rowNo),
+                        event["timestamp"],
+                        event["type"],
+                        event["network_type"],
+                        event["internet_status"],
+                        str(status)])
+    rowNo += 1
+
+
+# with open("report1.csv", "w") as f:
+#     f.write("S.No.|")
+#     f.write("LOGGING DATE/TIME|")
+#     f.write("EVENT|")
+#     f.write("NETWORK TYPE|")
+#     f.write("INFERENCE\n")
+#     rowNo = 1
+#     for event in relevantEvents:
+#         f.write(str(rowNo) + "|")
+#         f.write(event["timestamp"] + "|")
+#         status = "Unknown"
+#         if(event["type"] == "ENTER"):
+#             status = "User is at home"
+#         elif(event["type"] == "EXIT"):
+#             status = "User left home"
+#         f.write(event["type"] + "|")
+#         f.write(event["network_type"] + "|")
+#         f.write(status + "\n")
+#         #f.write(event["event"] + "\n")
+#         report1_rawdata.append([str(rowNo),
+#                             event["timestamp"],
+#                             event["type"],
+#                             event["network_type"],
+#                             event["internet_status"],
+#                             str(status)])
+#         # report1data.append([Paragraph(str(rowNo), styleN),
+#         #                     Paragraph(event["timestamp"], styleN),
+#         #                     Paragraph(event["type"], styleN),
+#         #                     Paragraph(event["network_type"], styleN),
+#         #                     Paragraph(str(status), styleN)])
+#         rowNo += 1
 
 # report1table = Table(report1data, colWidths=[2.05 * cm, 2.7 * cm, 5 * cm,
 #                                              3 * cm, 3 * cm])
@@ -350,7 +426,6 @@ with open("report2.csv", "w") as f:
         rowNo += 1
 
 
-
 header1 = "Device Name: " + str(device_name) + "<br></br>"
 header1 += "Phone Number:" + str(phone_number) + "<br></br>"
 header1 += "IMEI Number:" + str(imei) + "<br></br>"
@@ -360,7 +435,7 @@ header1 += "App analyzed: (1) Nest (2) com.google.Chromecast" + "<br></br>"
 header1 += "Status of Backup: " + str(status_backup) + "<br></br>"
 header1 += "Date of Backup: " + str(date_completion) + "<br></br>"
 
-header2 = "<br></br>User: " + str(user_name) + "<br></br>"
+header2 = "User: " + str(user_name) + "<br></br>"
 header2 += "User-ID: " + str(user_nest) + "<br></br>"
 header2 += "User Address: " + str(email) + "<br></br>"
 header2 += "IoT Device Activation Time: " + str(creation_time) + "<br></br>"
@@ -368,6 +443,13 @@ header2 += "IoT Device MAC Address: " + str(mac_address) + "<br></br>"
 header2 += "IoT Device Identifier:: " + str(identifier) + "<br></br>"
 header2 += "IoT Device Last Connection Time: " + str(last_connection_time) + "<br></br>"
 
+header3 = "User-ID: " + str(google_userID) + "<br></br>"
+header3 += "User Address: " + str(google_user_address) + "<br></br>"
+header3 += "Device Activation Time: " + str(google_device_activation) + "<br></br>"
+header3 += "Device Identifier: " + str(google_device_identifier) + "<br></br>"
+header3 += "Last Sync Date/Time: " + str(google_last_sync) + "<br></br>"
+header3 += "Last-known Logging API Usage: " + str(google_last_logging) + "<br></br><br></br>"
 
-r = Report(header1, header2, report1_rawdata)
+
+r = Report(header1, header2, header3, report1_rawdata)
 r.run()
