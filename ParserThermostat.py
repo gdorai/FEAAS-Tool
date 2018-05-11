@@ -44,7 +44,7 @@ class Report(object):
         """
         Run the report
         """
-        self.doc = SimpleDocTemplate("test.pdf")
+        self.doc = SimpleDocTemplate(pdf_name)
         self.story = [Spacer(1, 0 * inch)]
         #self.createLineItems()
         self.story.append(Paragraph("PART-I", self.styles["Heading1"]))
@@ -59,7 +59,6 @@ class Report(object):
         self.createTable1()
         self.story.append(Paragraph("PART-III. Fence Report", self.styles["Heading1"]))
         self.createTable2()
-        #self.story.append(report1table)
         self.doc.build(self.story, onFirstPage=self.createDocument)
         print("finished!")
 
@@ -73,7 +72,6 @@ class Report(object):
         styleBH.alignment = TA_CENTER
 
         # Headers
-        #index_header = Paragraph('''<b>S.No.</b>''', styleBH)
         datetime_header = Paragraph('''<b>Logging Date/Time</b>''', styleBH)
         event_header = Paragraph('''<b>Event</b>''', styleBH)
         nettype_header = Paragraph('''<b>iOS Network</b>''', styleBH)
@@ -82,7 +80,6 @@ class Report(object):
 
         report1data = []
 
-        #report1data = [[index_header, datetime_header, event_header, nettype_header, inference_header]]
         report1data = [[datetime_header, event_header, nettype_header, internetconn_header, inference_header]]
 
         for element in data:
@@ -111,15 +108,13 @@ class Report(object):
         styleBH.alignment = TA_CENTER
 
         # Headers
-        # index_header = Paragraph('''<b>S.No.</b>''', styleBH)
         datetime_header = Paragraph('''<b>Event Date/Time</b>''', styleBH)
         event_header = Paragraph('''<b>Event</b>''', styleBH)
         triggeredBy_header = Paragraph('''<b>Event Triggered by</b>''', styleBH)
         inference_header = Paragraph('''<b>Inference</b>''', styleBH)
 
         report1data = []
-#
-        # report1data = [[index_header, datetime_header, event_header, nettype_header, inference_header]]
+
         report1data = [[datetime_header, event_header, triggeredBy_header, inference_header]]
 
         for element in data:
@@ -140,42 +135,6 @@ class Report(object):
     # ----------------------------------------------------------------------
     def createDocument(self, canvas, doc):
         print("done!")
-        #"""
-        #Create the document
-        #"""
-        # self.c = canvas
-        # normal = self.styles["Normal"]
-        #
-        # header_text = "<b>This is a test header</b>"
-        # p = Paragraph(header_text, normal)
-        # p.wrapOn(self.c, self.width, self.height)
-        # p.drawOn(self.c, *self.coord(100, 12, mm))
-        #
-        # ptext = """text"""
-        #
-        # p = Paragraph(ptext, style=normal)
-        # p.wrapOn(self.c, self.width - 50, self.height)
-        # p.drawOn(self.c, 30, 700)
-        #
-        # story.append(self.table)
-
-        # ptext = """
-        # At vero eos et accusamus et iusto odio dignissimos ducimus qui
-        # blanditiis praesentium voluptatum deleniti atque corrupti quos dolores
-        # et quas molestias excepturi sint occaecati cupiditate non provident,
-        # similique sunt in culpa qui officia deserunt mollitia animi, id est laborum
-        # et dolorum fuga. Et harum quidem rerum facilis est et expedita distinctio.
-        # Nam libero tempore, cum soluta nobis est eligendi optio cumque nihil impedit
-        # quo minus id quod maxime placeat facere possimus, omnis voluptas assumenda est,
-        # omnis dolor repellendus. Temporibus autem quibusdam et aut officiis debitis aut
-        # rerum necessitatibus saepe eveniet ut et voluptates repudiandae sint et
-        # molestiae non recusandae. Itaque earum rerum hic tenetur a sapiente delectus,
-        # ut aut reiciendis voluptatibus maiores alias consequatur aut perferendis
-        # doloribus asperiores repellat.
-        # """
-        # p = Paragraph(ptext, style=normal)
-        # p.wrapOn(self.c, self.width - 50, self.height)
-        # p.drawOn(self.c, 30, 600)
 
     # ----------------------------------------------------------------------
 
@@ -190,25 +149,27 @@ def try_parse_int(s, base=10, val=None):
     return val
 
 
-#/home/manuel/Documents/forensics/17f7a8e8b387625472b32d4361250568b164c504/
-#path = os.path.join('sandbox', '17f7a8e8b387625472b32d4361250568b164c504')
-#path = '/sandbox/17f7a8e8b387625472b32d4361250568b164c504/'
 
-path = sys.argv[1] #'/home/manuel/Documents/forensics/iotfolder/8c75768ed100ac467a83e7a8684a392e3b3b671a'
-#path = "ThermostatBackuponApr-18"  #sys.argv[1]
+path = sys.argv[1]
+output_path = sys.argv[2]
+old_goose_name = os.path.join(output_path, 'oldGoose.csv')
+report1_name = os.path.join(output_path, 'report1.csv')
+report2_name = os.path.join(output_path, 'report2.csv')
+pdf_name = os.path.join(output_path, 'report.pdf')
 
 print(path)
 manifest_path = os.path.join(path, 'Manifest.db')
 info_path = os.path.join(path, 'Info.plist')
 status_path = os.path.join(path, 'Status.plist')
-#print(manifest_path)
+
 
 sqlite_nest_fullpath = os.path.join(path, 'Nest.sqlite')
-plist_nest_fullpath = os.path.join(path, 'com.nestlabs.jasper.release')
+plist_nest_fullpath = os.path.join(path, 'com.nestlabs.jasper.release.plist')
 goose_fullpath = os.path.join(path, 'GooseEventLogging')
+google_fullpath = os.path.join(path, 'com.google.Chromecast.plist')
 
-if(len(sys.argv) > 2):
-    if sys.argv[2] == "-b":
+if(len(sys.argv) > 3):
+    if sys.argv[3] == "-b":
         with sqlite3.connect(manifest_path, uri=True) as conn:
             c = conn.cursor()
             sqlite_nest_relative_path = 'Documents/Nest.sqlite'
@@ -217,7 +178,6 @@ if(len(sys.argv) > 2):
             c.execute("SELECT fileID FROM Files WHERE relativePath='{0}' AND domain='{1}'".format(sqlite_nest_relative_path, sqlite_nest_domain))
             sqlite_nest_filename = c.fetchone()[0]
             sqlite_nest_fullpath = os.path.join(path, sqlite_nest_filename[:2], sqlite_nest_filename)
-            #print(sqlite_nest_fullpath)
 
             plist_nest_relative_path = 'Library/Preferences/com.nestlabs.jasper.release.plist'
             plist_nest_domain = 'AppDomain-com.nestlabs.jasper.release'
@@ -225,7 +185,6 @@ if(len(sys.argv) > 2):
             c.execute("SELECT fileID FROM Files WHERE relativePath='{0}' AND domain='{1}'".format(plist_nest_relative_path, plist_nest_domain))
             plist_nest_filename = c.fetchone()[0]
             plist_nest_fullpath = os.path.join(path, plist_nest_filename[:2], plist_nest_filename)
-            #print(plist_nest_fullpath)
 
             goose_relative_path = 'Documents/GooseEventLogging'
             goose_domain = 'AppDomain-com.nestlabs.jasper.release'
@@ -258,7 +217,7 @@ date_completion = status_plist['Date']
 
 with open(goose_fullpath, 'rb') as f:
     goose_plist = biplist.readPlist(f)
-#print(goose_plist)
+
 num_objects = len(goose_plist['$objects'])
 print("Number of objects:" , num_objects)
 
@@ -271,7 +230,6 @@ with open(google_fullpath, 'rb') as f:
     google_last_sync = google_plist["GRWMessagingCacheUserDefaultsKey"]["GRWCacheLastSyncDate"]
     google_last_logging = google_plist["com.google.cast.analytics_logging_last_api_usage_report_time"]
 
-#jsonObjs = list()
 keys = set()
 all_events = []
 for i in range(2, num_objects-1):
@@ -281,20 +239,6 @@ for i in range(2, num_objects-1):
     for key in jsonObj.keys():
         keys.add(key)
     all_events.append([matchObj.group(1), jsonObj])
-with open("goose.csv", "w") as f:
-    f.write("timestamp|")
-    for key in keys:
-        f.write(key + "|")
-    f.write("\n")
-    for ev in all_events:
-        f.write(ev[0] + "|")
-        for key in keys:
-            if key in ev[1].keys():
-                #print(ev[1][key])
-                f.write(str(ev[1][key])+ "|")
-            else:
-                f.write("|")
-        f.write("\n")
 
 relevantEvents = []
 eventid  = 0
@@ -352,48 +296,6 @@ for event in relevantEvents:
     rowNo += 1
 
 
-# with open("report1.csv", "w") as f:
-#     f.write("S.No.|")
-#     f.write("LOGGING DATE/TIME|")
-#     f.write("EVENT|")
-#     f.write("NETWORK TYPE|")
-#     f.write("INFERENCE\n")
-#     rowNo = 1
-#     for event in relevantEvents:
-#         f.write(str(rowNo) + "|")
-#         f.write(event["timestamp"] + "|")
-#         status = "Unknown"
-#         if(event["type"] == "ENTER"):
-#             status = "User is at home"
-#         elif(event["type"] == "EXIT"):
-#             status = "User left home"
-#         f.write(event["type"] + "|")
-#         f.write(event["network_type"] + "|")
-#         f.write(status + "\n")
-#         #f.write(event["event"] + "\n")
-#         report1_rawdata.append([str(rowNo),
-#                             event["timestamp"],
-#                             event["type"],
-#                             event["network_type"],
-#                             event["internet_status"],
-#                             str(status)])
-#         # report1data.append([Paragraph(str(rowNo), styleN),
-#         #                     Paragraph(event["timestamp"], styleN),
-#         #                     Paragraph(event["type"], styleN),
-#         #                     Paragraph(event["network_type"], styleN),
-#         #                     Paragraph(str(status), styleN)])
-#         rowNo += 1
-
-# report1table = Table(report1data, colWidths=[2.05 * cm, 2.7 * cm, 5 * cm,
-#                                              3 * cm, 3 * cm])
-#
-# report1table.setStyle(TableStyle([
-#     ('INNERGRID', (0, 0), (-1, -1), 0.25, colors.black),
-#     ('BOX', (0, 0), (-1, -1), 0.25, colors.black),
-# ]))
-
-
-#print(relevantEvents)
 with sqlite3.connect(sqlite_nest_fullpath, uri=True) as conn:
     c = conn.cursor()
     c.execute("SELECT ZLATITUDE, ZLONGITUDE from ZCDGEOFENCE")
@@ -420,17 +322,6 @@ with sqlite3.connect(sqlite_nest_fullpath, uri=True) as conn:
     serialNumberDisplay = result[0][6]
     serialNumberBase = result[0][7]
 
-    # events = []
-    # c.execute("SELECT ZTOUCHEDAT, ZTEMPERATURE, ZTOUCHEDUSERID, ZSETPOINTTYPE, ZTIME"
-    #           " from ZCDSCHEDULESETPOINT")
-    # result = c.fetchall()
-    # for row in result:
-    #     events.append({'timestamp': datetime.datetime.fromtimestamp(int(row[0])).strftime("%c"),
-    #                    'datetime': datetime.datetime.fromtimestamp(int(row[0])),
-    #                    'temperature': row[1],
-    #                    'user' : row[2],
-    #                    'type': row[3],
-    #                    'time': str(datetime.timedelta(seconds=int(row[4])))})
 
     events = []
     c.execute("SELECT ZTOUCHEDWHEN, ZCOOLTEMP, ZHEATTEMP, ZTOUCHEDID"
@@ -444,26 +335,7 @@ with sqlite3.connect(sqlite_nest_fullpath, uri=True) as conn:
                        'user': row[3]})
 
 events = sorted(events, key=lambda k: k['datetime'])
-#print(events)
-with open("report2.csv", "w") as f:
-    f.write("S.No.|")
-    f.write("EVENT DATE/TIME|")
-    # f.write("BY (‘user’)|")
-    f.write("TYPE OF EVENT|")
-    f.write("INFERENCE|")
-    f.write("EVENT PERFORMED USING\n")
-    rowNo = 1
-    for event in events:
-        f.write(str(rowNo) + "|")
-        f.write(event["timestamp"] + "|")
-        f.write("Set cool to " + str(event["cool_temperature"]) + " or heat to " + str(event["heat_temperature"]) + "|")
-        f.write("|")
-        user = "-"
-        if event["user"] != None:
-            user = event["user"]
-        f.write(user + "\n")
-        rowNo += 1
-#timestamp, cool_temperature, heat_temperature, user
+
 report2_rawdata = []
 for event in events:
     thermo_inference = "None"

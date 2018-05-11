@@ -18,7 +18,7 @@ then
     #BACKUPPATH is temporarily replaced with my author's file path.
     BACKUPPATH="/Users/gokila/Library/Application Support/MobileSync/Backup/8c75768ed100ac467a83e7a8684a392e3b3b671a"
     echo “$BACKUPPATH”
-    python3 ParserThermostat.py "${BACKUPPATH}"
+    python3 ParserThermostat.py "${BACKUPPATH}" -b
     # python3 ParserCamera.py "${BACKUPPATH}"
 else
 	echo Connect the iOS device and hit trust
