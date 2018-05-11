@@ -20,7 +20,7 @@ class Report(object):
     """"""
 
     # ----------------------------------------------------------------------
-    def __init__(self, header1, header2, header3, table1_data):
+    def __init__(self, header1, header2, header3, table1_data, table2_data):
         """Constructor"""
         self.width, self.height = letter
         self.styles = getSampleStyleSheet()
@@ -28,6 +28,7 @@ class Report(object):
         self.header2 = header2
         self.header3 = header3
         self.table1_data = table1_data
+        self.table2_data = table2_data
 
     # ----------------------------------------------------------------------
     def coord(self, x, y, unit=1):
@@ -56,6 +57,8 @@ class Report(object):
         self.story.append(Paragraph(header3, self.styles["Normal"]))
         self.story.append(Paragraph("PART-II. Fence Report", self.styles["Heading1"]))
         self.createTable1()
+        self.story.append(Paragraph("PART-III. Fence Report", self.styles["Heading1"]))
+        self.createTable2()
         #self.story.append(report1table)
         self.doc.build(self.story, onFirstPage=self.createDocument)
         print("finished!")
@@ -89,12 +92,48 @@ class Report(object):
                                 Paragraph(element[4], styleN),
                                 Paragraph(element[5], styleN)])
 
-        report1table = Table(report1data, colWidths=[2.05 * cm, 2.7 * cm, 5 * cm,
-                                                     3 * cm, 3 * cm])
+        report1table = Table(report1data, colWidths=[4.00 * cm, 2.7 * cm, 2.8 * cm,
+                                                     3 * cm, 4 * cm])
 
         report1table.setStyle(TableStyle([
-            ('INNERGRID', (0, 0), (-1, -1), 0.25, colors.black),
-            ('BOX', (0, 0), (-1, -1), 0.25, colors.black),
+            ('LINEABOVE', (0, 0), (-1, 1), 0.25, colors.black),
+            #('BOX', (0, 0), (-1, -1), 0.25, colors.black),
+        ]))
+        self.story.append(report1table)
+
+        # ----------------------------------------------------------------------
+    def createTable2(self):
+        data = self.table2_data
+        styles = getSampleStyleSheet()
+        styleN = styles["BodyText"]
+        styleN.alignment = TA_LEFT
+        styleBH = styles["Normal"]
+        styleBH.alignment = TA_CENTER
+
+        # Headers
+        # index_header = Paragraph('''<b>S.No.</b>''', styleBH)
+        datetime_header = Paragraph('''<b>Event Date/Time</b>''', styleBH)
+        event_header = Paragraph('''<b>Event</b>''', styleBH)
+        triggeredBy_header = Paragraph('''<b>Event Triggered by</b>''', styleBH)
+        inference_header = Paragraph('''<b>Inference</b>''', styleBH)
+
+        report1data = []
+#
+        # report1data = [[index_header, datetime_header, event_header, nettype_header, inference_header]]
+        report1data = [[datetime_header, event_header, triggeredBy_header, inference_header]]
+
+        for element in data:
+            report1data.append([Paragraph(element[0], styleN),
+                                Paragraph(element[1], styleN),
+                                Paragraph(element[2], styleN),
+                                Paragraph(element[3], styleN)])
+
+        report1table = Table(report1data, colWidths=[5 * cm, 4 * cm, 3.5 * cm,
+                                                     4 * cm])
+
+        report1table.setStyle(TableStyle([
+            ('LINEABOVE', (0, 0), (-1, 1), 0.25, colors.black),
+            # ('BOX', (0, 0), (-1, -1), 0.25, colors.black),
         ]))
         self.story.append(report1table)
 
@@ -288,20 +327,20 @@ for ev in all_events:
 
 report1_rawdata = []
 
-isAtHome = False
+atHome = False
 rowNo = 1
 for event in relevantEvents:
     status = "Unknown"
     if(event["type"] == "ENTER"):
-        if(not isAtHome):
-            status = "User arrived home"
-            isAtHome = True
-        else:
+        if(atHome):
             status = "User is at home"
+        else:
+            status = "User arrived home"
+            atHome = True
     elif(event["type"] == "EXIT"):
-        if(isAtHome):
+        if(atHome):
             status = "User left home"
-            isAtHome = False
+            atHome = False
         else:
             status = "User is outside"
     report1_rawdata.append([str(rowNo),
@@ -424,6 +463,27 @@ with open("report2.csv", "w") as f:
             user = event["user"]
         f.write(user + "\n")
         rowNo += 1
+#timestamp, cool_temperature, heat_temperature, user
+report2_rawdata = []
+for event in events:
+    thermo_inference = "None"
+    thermo_user = "None"
+    happened = "Set cool to " + str(event["cool_temperature"])
+    if event["cool_temperature"] == 0.0:
+        happened = "Set heat to " + str(event["heat_temperature"])
+    if event["user"] is None:
+        thermo_user = "Unknown"
+        thermo_inference = "Manual Calibration"
+    elif event["user"] == "Google Assistant":
+        thermo_user = "Google Assistant"
+        thermo_inference = "Voice command to Google Home"
+    else:
+        thermo_user = event["user"]
+        thermo_inference = "A companion client was used"
+    report2_rawdata.append([event["timestamp"],
+                            happened,
+                            thermo_user,
+                            thermo_inference])
 
 
 header1 = "Device Name: " + str(device_name) + "<br></br>"
@@ -450,6 +510,5 @@ header3 += "Device Identifier: " + str(google_device_identifier) + "<br></br>"
 header3 += "Last Sync Date/Time: " + str(google_last_sync) + "<br></br>"
 header3 += "Last-known Logging API Usage: " + str(google_last_logging) + "<br></br><br></br>"
 
-
-r = Report(header1, header2, header3, report1_rawdata)
+r = Report(header1, header2, header3, report1_rawdata, report2_rawdata)
 r.run()
